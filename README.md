@@ -7,7 +7,7 @@ the `.env` file with the proper secrets.
 
 ## Scrapers 
 ### Using Israeli bank scarpers
-**Otsar-Hahayal scraper** - For Otsar-Hahayal you must disable FibiGuard (see personal settings after login, ) or approve the chromium browser as a legit device on the app. 
+**Otsar-Hahayal scraper** - For Otsar-Hahayal you should approve the chromium browser as a legit device on the app. 
 
 ## Prefect orchestration
 
