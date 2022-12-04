@@ -1,0 +1,57 @@
+services:
+  mongodb:
+    image: mongo:5.0
+    ports:
+      - 27017:27017
+    volumes:
+      - ~/apps/mongo:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+
+  mysqldb:
+    image: mysql:8.0
+    volumes:
+      - /etc/mysql/conf.d:/root/docker/test-mysql/conf.d
+      - ./db/mysql/mysql:/var/lib/mysql
+      - ./db/mysql/init.sql:/docker-entrypoint-initdb.d/1-init.sql
+    restart: always
+    environment:
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASSWORD
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      MYSQL_DATABASE: $MYSQL_DATABASE
+    ports:
+      - 6603:3306
+    expose:
+      - 3306
+
+  superset:
+    build: superset
+    container_name: superset
+    restart: always
+    volumes:
+      - ./superset/:/superset
+    #      - ./superset/superset_config.py:/etc/superset/superset_config.py
+    depends_on:
+      - mysqldb
+    entrypoint: /superset/superset-entrypoint.sh
+    env_file:
+      - .env
+    ports:
+      - 8088:8088
+
+  mysql-backup:
+    image: databack/mysql-backup
+    restart: always
+    environment:
+      DB_USER: $MYSQL_USER
+      DB_PASS: $MYSQL_PASSWORD
+      DB_SERVER: $MONGO_HOST
+      DB_PORT: 3306
+      DB_DUMP_FREQ: 1440
+      DB_DUMP_DEBUG: "true"
+      DB_DUMP_TARGET: ./data/mysql_backup
+      COMPRESSION: bzip2
+    volumes:
+         - ./data/mysql_backup:/db

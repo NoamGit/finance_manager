@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "dependencies": {
+    "commander": "^9.4.0",
+    "dotenv": "^16.0.2",
+    "israeli-bank-scrapers": "^2.1.1"
+  }
+}

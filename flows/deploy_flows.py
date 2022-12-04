@@ -1,0 +1,22 @@
+import entrypoints_config as cfg
+from prefect.infrastructure import Process
+from dataplatform.deploy_utils import save_block, bash
+
+queue_and_blocks_name = "ubuntu-local-agent"
+ib = f"-ib process/{queue_and_blocks_name}"
+build = "prefect deployment build"
+wq = f"-q {queue_and_blocks_name}"
+sb = "-sb gcs/flow-storage"
+o = "flows/deployments/"
+upload = "--skip-upload"
+
+if __name__ == "__main__":
+    bash("python flows/dataplatform/utils/create_blocks.py")
+
+    process_block = Process(env={"PREFECT_LOGGING_LEVEL": "DEBUG"})
+    save_block(process_block, queue_and_blocks_name)
+
+    # Deploy FLOWS
+    for flow in cfg.bank_flows:
+        flow_name = flow.split(':')[-1].replace("-","_")
+        bash(f"{build} {ib} {sb} {wq} {flow} -n {flow_name} -o {o + flow_name + '.yaml'}")
