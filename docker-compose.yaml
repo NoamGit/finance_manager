@@ -27,11 +27,11 @@ services:
       - 3306
 
   superset:
-    build: superset
+    build: ui/superset
     container_name: superset
     restart: always
     volumes:
-      - ./superset/:/superset
+      - ./ui/superset/:/superset
     #      - ./superset/superset_config.py:/etc/superset/superset_config.py
     depends_on:
       - mysqldb

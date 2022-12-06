@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 VIEWPORT_WIDTH = 1024
 VIEWPORT_HEIGHT = 768
-DATE_FORMAT = '%d/%m/%Y'
+DAY_LEADING_DATE_FORMAT = '%d/%m/%Y'
 YEAR_LEADING_DATE_FORMAT = '%Y-%m-%d'
 
 
@@ -62,7 +62,7 @@ class BaseScraper():
         if not isinstance(input_start_date, str):
             return False
         try:
-            datetime.strptime(input_start_date, DATE_FORMAT)
+            datetime.strptime(input_start_date, DAY_LEADING_DATE_FORMAT)
             return True
         except Exception as e:
             logger.exception(e)

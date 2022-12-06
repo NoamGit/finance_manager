@@ -1,0 +1,21 @@
+feature_extractors:
+  WeekDayExtractor:
+    run_columns:
+      - processed_date
+    replace_columns: [ ]
+  NameExtractor:
+    run_columns:
+      - description
+    replace_columns: [ ]
+data_enrichers:
+  SERPEnricher:
+    query_column: description
+clean_param:
+  exclude_features:
+    - processed_date
+    - description
+    - category_raw
+    - name
+    - id
+  inject_out_of_sample_categories: [ ]
+  label_col: category

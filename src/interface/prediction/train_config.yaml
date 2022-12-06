@@ -1,0 +1,28 @@
+model:
+  model_type: CategoryCatboost
+  n_estimators: 400
+  loss_function: MultiClass
+  eval_metric: TotalF1
+  cat_features:
+    - account_number
+    - normalized
+    - type
+  use_best_model: true
+  combinations_ctr: [ "Buckets:CtrBorderCount=50:Prior=1" ]
+  # best_model_min_trees=2,
+  # depth=6,
+  # one_hot_max_size=400,
+  # auto_class_weights='Balanced',
+train_param:
+  feature_columns:
+    - account_number
+    - weekday
+    - type
+    - normalized
+    - charged_amount
+    - day
+    - month
+  train_size: 0.70
+#  dataset_id: null
+#  start_date: 2020-01-01
+#  moth_in_future_to_predict: 30

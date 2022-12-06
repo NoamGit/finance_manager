@@ -25,6 +25,7 @@ deepchecks = "^0.9.0"
 shap = "^0.41.0"
 clearml = "^1.8.1"
 Deprecated = "^1.2.13"
+omegaconf = "^2.2.3"
 
 [tool.poetry.dev-dependencies]
 

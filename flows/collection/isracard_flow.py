@@ -7,16 +7,17 @@ from typing import List, Dict, Any, Optional, Union
 from prefect import flow, task
 from pydantic import ValidationError
 
+from src.core.common import DATE_FORMAT
 from src.core.common import get_db_secrets
 from src.core.collection.model import IsracardCredentials
-from src.interface import MONGO_CREDIT_TABLE_NAME, IBS_ISRACARD_PATH, EXEC_WORKING_DIR
-from src.interface.tasks.mongo_task import load_transactions_to_mongo_task
+from src.interface import MONGO_CREDIT_TABLE_NAME, IBS_ISRACARD_PATH, INTERFACE_WORKING_DIR
+from flows.common.tasks.mongo_task import load_transactions_to_mongo_task
 
 sys.path.append("../../src/core")
 sys.path.append("../../src/interface")
-from src.interface.isracard.model import IsracardCardCredentialsFactory
+from src.interface.collection.isracard import IsracardCardCredentialsFactory
 from src.interface.common.utils import validate_documents, unpack_to_unnested_format, translate_to_mysql_format
-from src.interface.tasks.mysql_task import load_to_mysql
+from flows.common.tasks import load_to_mysql
 
 
 @task()
@@ -38,9 +39,9 @@ def transform_scraper_params(start_date: Optional[datetime.date] = None
     if future_months_to_scrape < 1:
         raise ValidationError(f'future_months_to_scrape {future_months_to_scrape} is not valid')
     if start_date:
-        datetime.strptime(start_date, '%Y-%m-%d')
+        datetime.strptime(start_date, DATE_FORMAT)
 
-    start_date = datetime.strftime(datetime.now() - timedelta(days=31), '%Y-%m-%d') if not start_date else start_date
+    start_date = datetime.strftime(datetime.now() - timedelta(days=31), DATE_FORMAT) if not start_date else start_date
     return dict(start_date=start_date, future_months_to_scrape=future_months_to_scrape)
 
 
@@ -60,7 +61,7 @@ def fetch(card_suffix: str, time_param: Dict[str, Union[datetime, int]]):
         , '--password'
         , f"{isracard_credentials_block.password.get_secret_value()}"
            ]
-    res = run(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, cwd=EXEC_WORKING_DIR)
+    res = run(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, cwd=INTERFACE_WORKING_DIR)
     if res.returncode == 0 and not res.stderr:
         return json.loads(res.stdout)
     raise ChildProcessError(f'fetching process failed: {res.stderr}')

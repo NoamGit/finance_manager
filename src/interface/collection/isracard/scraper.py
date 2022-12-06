@@ -15,7 +15,7 @@ from src.core import deep_get
 from src.core.collection.scrapers.model import ScaperProgressTypes, ScraperLoginResult, ScraperErrorTypes, Transaction, \
     TransactionStatuses, \
     TransactionTypes
-from src.interface.isracard.constants import COUNTRY_CODE, ID_TYPE, INSTALLMENTS_KEYWORD
+from src.interface.collection.isracard.constants import COUNTRY_CODE, ID_TYPE, INSTALLMENTS_KEYWORD
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +176,7 @@ class IsracardScraper(BaseScraperWithBrowser):
         return str(datetime.strptime(billing_date, DATE_FORMAT).date())
 
     def _get_accounts_url(self, end_month: datetime.date) -> str:
-        billing_date = datetime.strftime(end_month, '%Y-%m-%d')
+        billing_date = datetime.strftime(end_month, DATE_FORMAT)
         params = {
             "reqName": 'DashboardMonth',
             "actionCode": '0',

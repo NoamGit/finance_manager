@@ -1,10 +1,10 @@
 from dotenv import load_dotenv
-from flows.dataplatform.blocks.workspace import Workspace
+from flows.common.dataplatform.blocks.workspace import Workspace
 from src.core.collection.model import IsracardCredentials, BankCredentials, MongoCredentials, MysqlCredentials
-from flows.dataplatform.environment import get_env
+from flows.common.dataplatform.environment import get_env
 import os
 from prefect.filesystems import GCS
-from flows.dataplatform.deploy_utils import save_block, DEFAULT_BLOCK
+from flows.common.dataplatform.deploy_utils import save_block, DEFAULT_BLOCK
 
 load_dotenv()
 

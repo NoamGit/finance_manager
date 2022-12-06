@@ -1,6 +1,6 @@
 import entrypoints_config as cfg
 from prefect.infrastructure import Process
-from dataplatform.deploy_utils import save_block, bash
+from flows.common.dataplatform.deploy_utils import save_block, bash
 
 queue_and_blocks_name = "ubuntu-local-agent"
 ib = f"-ib process/{queue_and_blocks_name}"
@@ -11,7 +11,7 @@ o = "flows/deployments/"
 upload = "--skip-upload"
 
 if __name__ == "__main__":
-    bash("python flows/dataplatform/utils/create_blocks.py")
+    bash("python flows/common/dataplatform/utils/create_blocks.py")
 
     process_block = Process(env={"PREFECT_LOGGING_LEVEL": "DEBUG"})
     save_block(process_block, queue_and_blocks_name)

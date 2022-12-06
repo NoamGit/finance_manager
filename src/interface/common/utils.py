@@ -1,47 +1,30 @@
 import json
+import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from hashlib import sha256
+from typing import List, Dict, Any, Optional, Tuple, Iterable
 
+import prefect
+import pymongo
+from prefect import get_run_logger, task
+from pydantic import BaseModel
+from pymongo import WriteConcern
+from pymongo.errors import BulkWriteError
+from sqlalchemy import create_engine
+
+from src.core.common import TIMESTAMP_FORMAT, DATE_FORMAT
 from src.interface.common.model import MySqlTransaction, MySqlBalance
+
+
+def get_logger() -> Optional[logging.Logger]:
+    task_run_context = prefect.context.TaskRunContext.get()
+    return get_run_logger() if task_run_context else None
 
 
 def validate_documents(doc: List[Dict[str, Any]]):
     if not doc:
         raise ValueError("documents must be provided")
     return
-
-
-def translate_balance_to_mysql_format(balance: Dict[str, Any]) -> MySqlBalance:
-    return MySqlBalance(
-        balance=balance.get('balance'),
-        credit_limit=balance.get('creditLimit'),
-        date=balance.get('last_transaction_date'),
-        credit_utilization=balance.get('creditUtilization'),
-        balance_currency=balance.get('balanceCurrency'),
-        account_number=balance.get('accountNumber')
-    )
-
-
-def translate_to_mysql_format(data: List[Dict[str, Any]]):
-    res = []
-    for d in data:
-        try:
-            transaction = MySqlTransaction(
-                id=d.get('identifier'),
-                description=d.get('description'),
-                notes=d.get('memo'),
-                processed_date=d.get('processedDate'),
-                date=d.get('date'),
-                original_amount=d.get('originalAmount'),
-                charged_amount=d.get('chargedAmount'),
-                category_raw=d.get('category'),
-                account_number=d.get('accountNumber'),
-                type=d.get('type')
-            )
-            res.append(transaction)
-        except Exception as e:
-            raise e
-    return res
 
 
 def unpack_to_unnested_format(data: List[Dict[str, Any]], account_number: str = 'NA') -> List[Dict[str, Any]]:
@@ -81,9 +64,9 @@ def infer_data_structure_type(data: List[Dict[str, Any]]) -> Optional[str]:
 def add_transaction_date_and_account_to_balance_data(balance: Dict[str, Any], transactions: List[Dict[str, Any]],
                                                      account_number: str) -> Dict[str, Any]:
     last_transaction_date = max(
-        [datetime.strptime(txn.get('date'), '%Y-%m-%dT%H:%M:%S.%fZ') for txn in transactions]).date() + timedelta(
+        [datetime.strptime(txn.get('date'), TIMESTAMP_FORMAT) for txn in transactions]).date() + timedelta(
         days=1)
-    balance.update({'last_transaction_date': datetime.strftime(last_transaction_date, '%Y-%m-%d')})
+    balance.update({'last_transaction_date': datetime.strftime(last_transaction_date, DATE_FORMAT)})
     balance.update({'accountNumber': account_number})
     return balance
 
@@ -103,3 +86,130 @@ def append_transaction_list_collection(account_transactions: List[Dict[str, Any]
     for trans in account_transactions:
         trans.update({"accountNumber": str(account_number)})
         updating_result.append(trans)
+
+
+# region MySQL utils
+def translate_balance_to_mysql_format(balance: Dict[str, Any]) -> MySqlBalance:
+    return MySqlBalance(
+        balance=balance.get('balance'),
+        credit_limit=balance.get('creditLimit'),
+        date=balance.get('last_transaction_date'),
+        credit_utilization=balance.get('creditUtilization'),
+        balance_currency=balance.get('balanceCurrency'),
+        account_number=balance.get('accountNumber')
+    )
+
+
+def translate_to_mysql_format(data: List[Dict[str, Any]]):
+    res = []
+    for d in data:
+        try:
+            transaction = MySqlTransaction(
+                id=d.get('identifier'),
+                description=d.get('description'),
+                notes=d.get('memo'),
+                processed_date=d.get('processedDate'),
+                date=d.get('date'),
+                original_amount=d.get('originalAmount'),
+                charged_amount=d.get('chargedAmount'),
+                category_raw=d.get('category'),
+                account_number=d.get('accountNumber'),
+                type=d.get('type')
+            )
+            res.append(transaction)
+        except Exception as e:
+            raise e
+    return res
+
+
+def get_mysql_client(mysql_param: Dict[str, str]):
+    host = mysql_param.get('mysql_host')
+    database = mysql_param.get('mysql_database')
+    mysql_port = mysql_param.get('mysql_port')
+    username = mysql_param.get('mysql_username')
+    password = mysql_param.get('mysql_password')
+    uri = f"mysql+pymysql://{username}:{password}@{host}:{mysql_port}/{database}"
+    db = create_engine(uri)
+    return db
+
+
+def get_insert_query(table_name: str, data: Optional[List[Dict[str, Any]]]) -> str:
+    d = next(iter(data))
+    assert isinstance(d, BaseModel)
+    num_objects = len(d.dict())
+    fields_str = "(" + ", ".join([f"`{k}`" for k in d.dict().keys()]) + ")"
+    values_str = "(" + ", ".join(["%s" for _ in range(num_objects)]) + ")"
+    query = f"INSERT IGNORE INTO  `{table_name}` {fields_str}  VALUES{values_str}"
+    return query
+
+
+def translate_to_sql_credit_format(data) -> List[Tuple]:
+    records = [tuple(d.dict().values()) for d in data]
+    return records
+
+
+def _load_to_mysql(data: Optional[List[Dict[str, Any]]], mysql_param: Dict[str, str], table_name: str):
+    db = get_mysql_client(mysql_param)
+    query = get_insert_query(table_name, data)
+    records = translate_to_sql_credit_format(data)
+    result = db.execute(query, records)
+    result.close()
+
+
+# endregion
+
+# region Mongo utils
+def load_to_mongo(mongo_doc: Optional[Dict[str, Any]], mongo_param: Dict[str, str], table_name: str):
+    assert 'mongo_key' in mongo_doc
+    db = get_mongo_client(mongo_param)
+    collection = db.get_collection(table_name)
+    collection.create_index('mongo_key', unique=True, background=True)
+    collection.with_options(write_concern=WriteConcern(w=0))
+    collection.update_one(
+        filter=dict(mongo_key=mongo_doc.get('mongo_key')),
+        update={"$set": mongo_doc}
+        , upsert=True
+    )
+
+
+def read_from_mongo(query: Dict[str, str], mongo_param: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    table_name = mongo_param.get('table_name')
+    assert 'mongo_key' in query
+    db = get_mongo_client(mongo_param)
+    collection = db.get_collection(table_name)
+    return collection.find_one(query)
+
+
+def load_transactions_to_mongo(mongo_docs: Optional[List[Dict[str, Any]]], mongo_param: Dict[str, str],
+                               table_name: str):
+    db = get_mongo_client(mongo_param)
+    validate_documents(mongo_docs)
+    transformed_mongo_docs = unpack_to_unnested_format(mongo_docs)
+    transactions = db.get_collection(table_name)
+    transactions.create_index('identifier', unique=True, background=True)
+    transactions.with_options(write_concern=WriteConcern(w=0))
+    try:
+        transactions.insert_many(
+            transformed_mongo_docs
+            , ordered=False
+        )
+    except BulkWriteError as e:
+        panic_list = list(filter(lambda x: x['code'] != 11000, e.details['writeErrors']))
+        if len(panic_list) > 0:
+            raise e
+
+
+def get_mongo_client(mongo_param: Dict[str, str]):
+    host = mongo_param.get('mongo_host')
+    port = mongo_param.get('mongo_port')
+    username = mongo_param.get('mongo_username')
+    password = mongo_param.get('mongo_password')
+    uri = f"mongodb://{username}:{password}@{host}:{port}"
+    db = pymongo.MongoClient(uri)
+    return db['prod-db']
+
+
+def create_mongo_key(ingredients: Iterable[str]) -> str:
+    return sha256(",".join(ingredients).encode('utf-8')).hexdigest()
+
+# endregion

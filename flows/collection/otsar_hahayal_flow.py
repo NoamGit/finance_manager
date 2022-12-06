@@ -4,15 +4,17 @@ from typing import Optional, Dict, Any, Tuple, List
 from prefect import task, flow
 from subprocess import run, PIPE
 
+from src.core.common import DATE_FORMAT
 from src.core.common import get_db_secrets
-from src.interface import IBS_OTSAR_PATH, EXEC_WORKING_DIR, MONGO_BANK_ACCOUNT_TABLE_NAME
+from src.interface import IBS_OTSAR_PATH, INTERFACE_WORKING_DIR, MONGO_BANK_ACCOUNT_TABLE_NAME
 from src.interface.common.model import MySqlTransaction, MySqlBalance
 from datetime import datetime, timedelta
 
 from src.interface.common.utils import translate_to_mysql_format, unpack_to_unnested_format, \
-    translate_balance_to_mysql_format, add_transaction_date_and_account_to_balance_data, validate_documents
-from src.interface.tasks.mongo_task import load_to_mongo_task, create_mongo_key
-from src.interface.tasks.mysql_task import load_to_mysql
+    translate_balance_to_mysql_format, add_transaction_date_and_account_to_balance_data, validate_documents, \
+    create_mongo_key
+from flows.common.tasks.mongo_task import load_to_mongo_task
+from flows.common.tasks import load_to_mysql
 from src.core.collection.model import BankCredentials
 
 
@@ -26,7 +28,7 @@ def get_credentials() -> Dict[str, str]:
 
 @task()
 def validate_inputs(start_date: str):
-    start_date = datetime.strptime(start_date, '%Y-%m-%d')
+    start_date = datetime.strptime(start_date, DATE_FORMAT)
     assert start_date.year > 2000
 
 
@@ -43,7 +45,7 @@ def fetch(start_date: str):
         , '--password'
         , f"{bankcredentials_block.password.get_secret_value()}"
            ]
-    res = run(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, cwd=EXEC_WORKING_DIR)
+    res = run(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, cwd=INTERFACE_WORKING_DIR)
     if res.returncode == 0 and not res.stderr:
         return json.loads(res.stdout)
     raise ChildProcessError(f'fetching process failed: {res.stderr}')
@@ -67,7 +69,7 @@ def translate_bank_transaction_to_mysql_data_model(data: Dict[str, Any]) -> Tupl
 @flow
 def scrape_otsar_hahayal(start_date: Optional[str] = None):
     secrets = get_credentials()
-    start_date = start_date or (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+    start_date = start_date or (datetime.now() - timedelta(days=30)).strftime(DATE_FORMAT)
     validate_inputs(start_date)
 
     raw_trans = fetch(start_date, wait_for=[validate_inputs])

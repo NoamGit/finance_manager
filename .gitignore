@@ -1,0 +1,6 @@
+/.idea/
+/.env
+/data
+/.prefectignore
+/household-finance-5a124460ccc9.json
+/node_modules/**
