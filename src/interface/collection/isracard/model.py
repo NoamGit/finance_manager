@@ -25,9 +25,11 @@ class IsracardScrapedTransaction(BaseModel):
 
 
 class IsracardCardCredentialsFactory():
-    user_map: Dict[str, IsracardCredentials] = {
-        '1029': IsracardCredentials.load("noam-isracard-cred"),
-        '5094': IsracardCredentials.load("eden-isracard-cred")    }
+    user_map: Dict[str, str] = {
+        '1029': "noam-isracard-cred",
+        '5094': "eden-isracard-cred"}
 
-    def get_credentials(self, card_suffix: str) -> Optional[IsracardCredentials]:
-        return self.user_map.get(card_suffix)
+    def get_credentials(self, card_suffix: str):
+        block_identifier = self.user_map.get(card_suffix)
+        return IsracardCredentials.load(block_identifier)
+

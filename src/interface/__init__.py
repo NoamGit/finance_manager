@@ -1,6 +1,6 @@
 from pathlib import Path
 
-IBS_OTSAR_PATH = "collection/isracard/otsar_hahayal/fetch_otsar_hahayal.js"
+IBS_OTSAR_PATH = "collection/otsar_hahayal/fetch_otsar_hahayal.js"
 IBS_ISRACARD_PATH = "collection/isracard/fetch_isracard.js"
 INTERFACE_WORKING_DIR = str(Path(__file__).parent.absolute())
 

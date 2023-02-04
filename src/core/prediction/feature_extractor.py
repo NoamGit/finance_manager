@@ -8,6 +8,7 @@ import pandas as pd
 from src.core.common import DATE_FORMAT
 from src.core.prediction.model import FeatureExtractor
 from src.core.prediction.domain_rules import SWITCH_TERMS, BRANDS, STOPWORDS
+from src.interface.prediction.constants import NAME_COLUMN
 
 
 class WeekDayExtractor(FeatureExtractor):
@@ -30,7 +31,7 @@ class NameExtractor(FeatureExtractor):
         self.stop_regex = re.compile(r'\b(' + self.remove + r')\b')
 
     def extract(self, values: pd.Series):
-        return {"normalized": self.remove_stopwords(
+        return {NAME_COLUMN: self.remove_stopwords(
             self.normalize_to_brand(self.switch_terms(values[self.run_columns][0])))}
 
     def remove_stopwords(self, value: str) -> str:

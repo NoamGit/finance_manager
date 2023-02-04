@@ -21,7 +21,8 @@ import { program } from 'commander';
             startDate: new Date(args.date),
             futureMonthsToScrape: args.months,
             combineInstallments: false,
-            showBrowser: false
+            showBrowser: false,
+            additionalTransactionInformation: true
         };
 
         // read documentation below for information about credentials

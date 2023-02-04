@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, Tuple, List
 from prefect import task, flow
 from subprocess import run, PIPE
 
+from flows.common.tasks.mysql_task import load_to_mysql
 from src.core.common import DATE_FORMAT
 from src.core.common import get_db_secrets
 from src.interface import IBS_OTSAR_PATH, INTERFACE_WORKING_DIR, MONGO_BANK_ACCOUNT_TABLE_NAME
@@ -14,7 +15,6 @@ from src.interface.common.utils import translate_to_mysql_format, unpack_to_unne
     translate_balance_to_mysql_format, add_transaction_date_and_account_to_balance_data, validate_documents, \
     create_mongo_key
 from flows.common.tasks.mongo_task import load_to_mongo_task
-from flows.common.tasks import load_to_mysql
 from src.core.collection.model import BankCredentials
 
 
@@ -62,7 +62,7 @@ def translate_bank_transaction_to_mysql_data_model(data: Dict[str, Any]) -> Tupl
     balance = add_transaction_date_and_account_to_balance_data(balance, transactions, account_number)
     transformed_balance_data = translate_balance_to_mysql_format(balance)
     transformed_transaction_data = unpack_to_unnested_format(transactions, account_number)
-    transformed_transaction_data = translate_to_mysql_format(transformed_transaction_data)
+    transformed_transaction_data = translate_to_mysql_format(transformed_transaction_data, create_id=True)
     return transformed_transaction_data, [transformed_balance_data]
 
 

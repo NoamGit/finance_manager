@@ -100,12 +100,15 @@ def translate_balance_to_mysql_format(balance: Dict[str, Any]) -> MySqlBalance:
     )
 
 
-def translate_to_mysql_format(data: List[Dict[str, Any]]):
+def translate_to_mysql_format(data: List[Dict[str, Any]], create_id: bool = False) -> List[Dict[str, Any]]:
     res = []
     for d in data:
         try:
+            id_dict = {k: d[k] for k in ['identifier', 'description', 'date', 'processedDate', 'chargedAmount']}
+            unique_id = sha256(json.dumps(id_dict, sort_keys=True).encode('utf-8')).hexdigest() if create_id else d.get(
+                'identifier')
             transaction = MySqlTransaction(
-                id=d.get('identifier'),
+                id=unique_id,
                 description=d.get('description'),
                 notes=d.get('memo'),
                 processed_date=d.get('processedDate'),
@@ -143,15 +146,34 @@ def get_insert_query(table_name: str, data: Optional[List[Dict[str, Any]]]) -> s
     return query
 
 
-def translate_to_sql_credit_format(data) -> List[Tuple]:
-    records = [tuple(d.dict().values()) for d in data]
+def get_update_query(table_name: str, data: Optional[List[Dict[str, Any]]], fields_to_update: List[str],
+                     id_field: str) -> str:
+    d = next(iter(data))
+    assert isinstance(d, BaseModel)
+    fields_str = ", ".join([f"`{k}` = %s" for k in fields_to_update])
+    id_str = f"{id_field} = %s"
+    query = f"UPDATE `{table_name}` SET {fields_str}  WHERE {id_str}"
+    return query
+
+
+def translate_to_sql_credit_format(data, fields_to_update: Optional[List[str]] = None) -> List[Tuple]:
+    records = []
+    for d in data:
+        d_ = d.dict()
+        r_ = tuple([d_[f] for f in fields_to_update]) if fields_to_update else tuple(d_.values())
+        records.append(r_)
     return records
 
 
-def _load_to_mysql(data: Optional[List[Dict[str, Any]]], mysql_param: Dict[str, str], table_name: str):
+def _load_to_mysql(data: Optional[List[Dict[str, Any]]], mysql_param: Dict[str, str], table_name: str,
+                   fields_to_update: Optional[List[str]] = None, identifier: Optional[str] = None):
     db = get_mysql_client(mysql_param)
-    query = get_insert_query(table_name, data)
-    records = translate_to_sql_credit_format(data)
+    if fields_to_update and identifier:
+        query = get_update_query(table_name, data, fields_to_update, identifier)
+        fields_to_update += [identifier]
+    else:
+        query = get_insert_query(table_name, data)
+    records = translate_to_sql_credit_format(data, fields_to_update)
     result = db.execute(query, records)
     result.close()
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from flows.prediction.transaction_category_training_flow import load_preprocess_config
+from src.interface.prediction.process import load_preprocess_config
 from src.core.prediction.feature_extractor import WeekDayExtractor, NameExtractor
 from src.interface.prediction.enrichment_services import SERPEnricher
 from flows.common.tasks.transform_task import preprocess_task

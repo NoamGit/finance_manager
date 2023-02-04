@@ -7,6 +7,7 @@ model:
     - account_number
     - normalized
     - type
+    - category_raw
   use_best_model: true
   combinations_ctr: [ "Buckets:CtrBorderCount=50:Prior=1" ]
   # best_model_min_trees=2,
@@ -19,6 +20,7 @@ train_param:
     - weekday
     - type
     - normalized
+    - category_raw
     - charged_amount
     - day
     - month

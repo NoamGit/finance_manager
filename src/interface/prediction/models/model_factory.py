@@ -6,6 +6,7 @@ class SupervisedModelFactory():
     def get_model(self, name: str, param: Dict[str, Any])->Any:
         try:
             m = getattr(sys.modules[__name__], name)
-            return m(**param)
-        except AttributeError:
+        except AttributeError as ex:
             raise ValueError(f'Model {name} is not supported')
+        return m(**param)
+

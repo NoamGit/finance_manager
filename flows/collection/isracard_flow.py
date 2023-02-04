@@ -7,17 +7,17 @@ from typing import List, Dict, Any, Optional, Union
 from prefect import flow, task
 from pydantic import ValidationError
 
+from flows.common.tasks.mysql_task import load_to_mysql
 from src.core.common import DATE_FORMAT
 from src.core.common import get_db_secrets
 from src.core.collection.model import IsracardCredentials
 from src.interface import MONGO_CREDIT_TABLE_NAME, IBS_ISRACARD_PATH, INTERFACE_WORKING_DIR
+from src.interface.collection.isracard.model import IsracardCardCredentialsFactory
 from flows.common.tasks.mongo_task import load_transactions_to_mongo_task
 
 sys.path.append("../../src/core")
 sys.path.append("../../src/interface")
-from src.interface.collection.isracard import IsracardCardCredentialsFactory
 from src.interface.common.utils import validate_documents, unpack_to_unnested_format, translate_to_mysql_format
-from flows.common.tasks import load_to_mysql
 
 
 @task()
@@ -87,6 +87,20 @@ def scrape_isracard(card_suffix: str, start_date: Optional[str] = None,
     load_to_mysql(processed_data, credentials, 'credit_transaction')
 
 
+@flow
+def backfill_isracard(card_suffix: str, fields_to_update: List[str], start_date: Optional[str] = None,
+                      future_months_to_scrape: Optional[int] = None):
+    credentials = get_flow_db_secrets()
+    scraper_params = transform_scraper_params(start_date=start_date
+                                              , future_months_to_scrape=future_months_to_scrape)
+    data = fetch(card_suffix, scraper_params)
+    processed_data = translate_to_mysql_data_model(data)
+    load_to_mysql(processed_data, credentials, 'credit_transaction', fields_to_update, identifier="id")
+
+
 if __name__ == '__main__':
-    flow_param = dict(start_date="2021-02-01", future_months_to_scrape=24, card_suffix='1029')
-    scrape_isracard(**flow_param)
+    # flow_param = dict(start_date="2022-11-01", future_months_to_scrape=24, card_suffix='5094')
+    # scrape_isracard(**flow_param)
+
+    flow_param = dict(start_date="2021-02-01", future_months_to_scrape=24, card_suffix='1029', fields_to_update=["category_raw"])
+    backfill_isracard(**flow_param)

@@ -6,6 +6,7 @@ import pandas as pd
 import logging
 import os
 from abc import abstractmethod
+import operator
 
 from pydantic import BaseModel, validator, Json
 
@@ -105,7 +106,7 @@ class DataSetManager():
         return False
 
     @abstractmethod
-    def read_dataset(self, url: str)->pd.DataFrame:
+    def read_dataset(self, url: str) -> pd.DataFrame:
         pass
 
     @abstractmethod
@@ -113,21 +114,60 @@ class DataSetManager():
         pass
 
 
+class ModelRegistry():
+    __model_id__: Optional[str] = None
+
+    @property
+    def model_id(self):
+        return self.__model_id__
+
+    @model_id.setter
+    def model_id(self, value):
+        self.__model_id__ = value
+
+    @abstractmethod
+    def read_model(self, uri: str):
+        pass
+
+    @abstractmethod
+    def register_model(self, model, output_url: str):
+        pass
+
+
 class CategoryModelOutput(BaseModel):
     id: str
-    features: Dict[str, Any]
-    predicted_category: Optional[str]
-    category: Optional[str]
+    features: str
+    predicted_category: Optional[int]
     proba: Optional[float]
     overruled: bool = False
-    predict_array: List[Tuple[str, float]]
 
     def __str__(self):
-        return f"gt:{self.category} | pred:{self.predicted_category} | f:{self.features}"
+        return f"pred:{self.predicted_category} | f:{self.features}"
 
-    @validator('category')
-    def category_must_come_out_of_list(cls, v):
-        if False:
-            # TODO: add validation according to list of categories pulled from category table
-            raise ValueError(f'{v} is not in category list [DUMMY]')
+    @validator('proba')
+    def proba_must_be_positive(cls, v):
+        if v < 0:
+            raise ValueError(f'{v} is negative')
         return v
+
+
+class BaseDomainRule():
+    def __init__(self, input_operator: str, mapping: Dict[str, str], logger: Optional[logging.Logger] = None):
+        operator_map = operator.__dict__
+        assert input_operator in list(operator_map), f"Operator {input_operator} not found in operator module"
+        self.operator = operator_map[input_operator]
+        self.mapping = mapping
+        self.logger = logger if logger else logging.getLogger(__name__)
+
+    @abstractmethod
+    def apply(self, value: Union[float, str, int]) -> Optional[Union[float, str, int, bool]]:
+        if self.operator == operator.contains:
+            return self._check_contain_rule(value)
+        elif self.operator == operator.eq:
+            return self.mapping.get(value, -1)
+
+    def _check_contain_rule(self, value: Union[float, str, int]) -> Optional[Union[float, str, int]]:
+        for k, v in self.mapping.items():
+            if value in k:
+                return v
+        return -1

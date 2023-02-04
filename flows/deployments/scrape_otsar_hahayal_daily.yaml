@@ -1,0 +1,54 @@
+###
+### A complete description of a Prefect Deployment for flow 'scrape-otsar-hahayal'
+###
+name: scrape_otsar_hahayal_daily
+description: null
+version: 42d75882d4d4a28308e039c58e020282
+# The work queue that will handle this deployment's runs
+work_queue_name: ubuntu-local-agent
+tags: ["prod","finance"]
+parameters: {}
+schedule:
+  cron: 0 18 * * *
+  timezone: Asia/Jerusalem
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: scrape-otsar-hahayal
+manifest_path: null
+infrastructure:
+  type: process
+  env:
+    PREFECT_LOGGING_LEVEL: DEBUG
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: 91b1693d-ae53-40be-a19f-24bdab656742
+  _block_document_name: ubuntu-local-agent
+  _is_anonymous: false
+  block_type_slug: process
+  _block_type_slug: process
+storage:
+  bucket_path: house-finance
+  service_account_info: '**********'
+  project: noamhome
+  _block_document_id: 08c280eb-e0fa-4208-8bea-bbb25f3e9c2f
+  _block_document_name: flow-storage
+  _is_anonymous: false
+  block_type_slug: gcs
+  _block_type_slug: gcs
+path: ''
+entrypoint: flows/collection/otsar_hahayal_flow.py:scrape_otsar_hahayal
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    start_date:
+      title: start_date
+      type: string
+  required: null
+  definitions: null

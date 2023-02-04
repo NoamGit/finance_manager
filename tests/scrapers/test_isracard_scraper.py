@@ -4,7 +4,7 @@ import os
 
 from src.core.collection.scrapers.basescraper import BaseScraper
 from src.core.collection.scrapers.model import ScraperLoginResult
-from src.interface.isracard.scraper import IsracardScraper
+from src.interface.collection.isracard import IsracardScraper
 from src.core import ScraperCredentials
 from dotenv import load_dotenv
 

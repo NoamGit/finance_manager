@@ -1,0 +1,64 @@
+###
+### A complete description of a Prefect Deployment for flow 'scrape-isracard'
+###
+name: scrape_isracard_daily_eden
+description: null
+version: ee07bc1aa49e8db04469fb760046113b
+# The work queue that will handle this deployment's runs
+work_queue_name: ubuntu-local-agent
+tags: []
+parameters: {
+  "card_suffix": "5094",
+  "future_months_to_scrape": 2
+}
+schedule:
+  cron: 30 17 * * *
+  timezone: Asia/Jerusalem
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: scrape-isracard
+manifest_path: null
+infrastructure:
+  type: process
+  env:
+    PREFECT_LOGGING_LEVEL: DEBUG
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: 91b1693d-ae53-40be-a19f-24bdab656742
+  _block_document_name: ubuntu-local-agent
+  _is_anonymous: false
+  block_type_slug: process
+  _block_type_slug: process
+storage:
+  bucket_path: house-finance
+  service_account_info: '**********'
+  project: noamhome
+  _block_document_id: 08c280eb-e0fa-4208-8bea-bbb25f3e9c2f
+  _block_document_name: flow-storage
+  _is_anonymous: false
+  block_type_slug: gcs
+  _block_type_slug: gcs
+path: ''
+entrypoint: flows/collection/isracard_flow.py:scrape_isracard
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    card_suffix:
+      title: card_suffix
+      type: string
+    start_date:
+      title: start_date
+      type: string
+    future_months_to_scrape:
+      title: future_months_to_scrape
+      type: integer
+  required:
+  - card_suffix
+  definitions: null
