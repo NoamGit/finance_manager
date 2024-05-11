@@ -102,5 +102,5 @@ if __name__ == '__main__':
     # flow_param = dict(start_date="2022-11-01", future_months_to_scrape=24, card_suffix='5094')
     # scrape_isracard(**flow_param)
 
-    flow_param = dict(start_date="2021-02-01", future_months_to_scrape=24, card_suffix='1029', fields_to_update=["category_raw"])
+    flow_param = dict(start_date="2024-04-01", future_months_to_scrape=24, card_suffix='5094', fields_to_update=["category_raw"])
     backfill_isracard(**flow_param)

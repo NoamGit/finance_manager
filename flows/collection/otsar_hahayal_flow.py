@@ -19,8 +19,8 @@ from src.core.collection.model import BankCredentials
 
 
 @task()
-def get_credentials() -> Dict[str, str]:
-    cred = get_db_secrets()
+def get_credentials(env:str = None) -> Dict[str, str]:
+    cred = get_db_secrets(env)
     cred.update({"mongo_table_name": "transactions",
                  "mysql_table_name": "bank_transactions"})
     return cred
@@ -84,5 +84,5 @@ def scrape_otsar_hahayal(start_date: Optional[str] = None):
 
 
 if __name__ == '__main__':
-    flow_param = dict(start_date=None)
+    flow_param = dict(start_date='2024-03-01')
     scrape_otsar_hahayal(**flow_param)

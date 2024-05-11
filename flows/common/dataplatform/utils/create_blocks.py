@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from flows.common.dataplatform.blocks.workspace import Workspace
-from src.core.collection.model import IsracardCredentials, BankCredentials, MongoCredentials, MysqlCredentials
+from src.core.collection.model import IsracardCredentials, BankCredentials, MongoCredentials, MysqlCredentials, \
+    SERPCredentials
 from flows.common.dataplatform.environment import get_env
 import os
 from prefect.filesystems import GCS
@@ -9,6 +10,11 @@ from flows.common.dataplatform.deploy_utils import save_block, DEFAULT_BLOCK
 load_dotenv()
 
 if __name__ == '__main__':
+    serp_credentials = SERPCredentials(
+        token=os.environ.get("SERP_API"),
+    )
+    save_block(serp_credentials, name='serp-cred')
+
     workspace = Workspace(
         name=get_env(),
         block_name=DEFAULT_BLOCK,
