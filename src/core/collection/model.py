@@ -32,6 +32,8 @@ class MongoCredentials(Block):
     mongo_username: SecretStr
     mongo_password: SecretStr
 
+class SERPCredentials(Block):
+    token: SecretStr
 
 class MysqlCredentials(Block):
     # mysql secrets

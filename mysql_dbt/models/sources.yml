@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: mysql_db
+    schema: finance
+    tables:
+      - name: clean_transactions

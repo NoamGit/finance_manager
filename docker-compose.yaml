@@ -27,19 +27,36 @@ services:
       - 3306
 
   superset:
-    build: ui/superset
+    build: ./ui/superset
     container_name: superset
-    restart: always
-    volumes:
-      - ./ui/superset/:/superset
-    #      - ./superset/superset_config.py:/etc/superset/superset_config.py
     depends_on:
+      - redis
       - mysqldb
-    entrypoint: /superset/superset-entrypoint.sh
+    entrypoint: /app/superset-entrypoint.sh
     env_file:
       - .env
+    environment:
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_HOST=mysqldb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SQLALCHEMY_DATABASE_URI=mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@mysqldb:${MYSQL_PORT}/${MYSQL_DATABASE}
     ports:
       - 8088:8088
+    volumes:
+      - superset_home:/app/superset_home
+      - ./ui/superset/superset_config.py:/app/superset_config.py
+      - ./ui/superset/Dockerfile:/app/Dockerfile
+      - ./ui/superset/superset-entrypoint.sh:/app/superset-entrypoint.sh
+
+  redis:
+    image: redis:6.2
+    container_name: redis
+    volumes:
+      - redis_data:/data
 
   mysql-backup:
     image: databack/mysql-backup
@@ -54,4 +71,8 @@ services:
       DB_DUMP_TARGET: ./data/mysql_backup
       COMPRESSION: bzip2
     volumes:
-         - ./data/mysql_backup:/db
+      - ./data/mysql_backup:/db
+
+volumes:
+  superset_home:
+  redis_data:

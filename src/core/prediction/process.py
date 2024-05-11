@@ -50,7 +50,7 @@ class CategoryModelDataProcessor(DataProcessor):
             raise NotImplementedError("inject_out_of_sample_categories is not implemented yet")
         if self.config.get("run_mode") == 'train':
             res = self._remove_infrequent_categories(res, min_freq=5, label_col=label_col)
-            res = res[~res[label_col].isin({'IGNORE'})]  # don't train on IGNORE
+            res = res[~res[label_col].isin({'IGNORE','Investment'})]  # don't train on IGNORE
             res = res.drop_duplicates()
         return res
 

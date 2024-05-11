@@ -12,7 +12,8 @@ from pymongo import WriteConcern
 from pymongo.errors import BulkWriteError
 from sqlalchemy import create_engine
 
-from src.core.common import TIMESTAMP_FORMAT, DATE_FORMAT
+from src.core.common import TIMESTAMP_FORMAT, DATE_FORMAT, get_running_env
+from src.core.constants import LOCAL_UBUNTU_HOST
 from src.interface.common.model import MySqlTransaction, MySqlBalance
 
 
@@ -26,6 +27,9 @@ def validate_documents(doc: List[Dict[str, Any]]):
         raise ValueError("documents must be provided")
     return
 
+
+def get_today():
+    return datetime.strftime(datetime.now(), DATE_FORMAT)
 
 def unpack_to_unnested_format(data: List[Dict[str, Any]], account_number: str = 'NA') -> List[Dict[str, Any]]:
     if not data:
@@ -222,7 +226,9 @@ def load_transactions_to_mongo(mongo_docs: Optional[List[Dict[str, Any]]], mongo
 
 
 def get_mongo_client(mongo_param: Dict[str, str]):
-    host = mongo_param.get('mongo_host')
+    env = "PROD"
+    host = "local" if get_running_env(env) == "DEV" else LOCAL_UBUNTU_HOST
+    host = host
     port = mongo_param.get('mongo_port')
     username = mongo_param.get('mongo_username')
     password = mongo_param.get('mongo_password')

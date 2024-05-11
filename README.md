@@ -56,3 +56,11 @@ Docker is hanging and not stopping?
 When facing `errno 13 permission denied`
 
 use `sudo chmod -R 755 <path>` to allow full recursive access to the folder
+
+
+#### Things that can change
+- the local host address 192.168.1.117
+- prefect API, and block structure.
+- GCP billing account might get blocked
+- Credentials for financial accounts.
+- APIs for serpapi

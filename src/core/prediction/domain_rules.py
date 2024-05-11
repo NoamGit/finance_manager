@@ -41,6 +41,8 @@ NAME_2_CLASS_MAP = {
         , 'paybox': np.nan
         , 'פנגו': 18  # 'Transport'
         , 'BUBBLE DAN': 18  # 'Transport'
+        , 'GETT': 18  # 'Transport'
+        , 'UBER   TRIP': 18  # 'Transport'
         , 'העברה באפליקציית box': np.nan
         , 'העברה ב bit בנה"פ': np.nan
         , 'ישראכרט': np.nan
@@ -56,12 +58,10 @@ CLASS_2_CLASS_MAP = {
         46: np.nan  # Presents received
         , 45: np.nan  # New apartment
         , 43: np.nan  # Garden
-        , 42: np.nan  # Eden's work expenses
-        , 41: np.nan  # IGNORE
-        , 40: np.nan  # Noam's paycheck
-        , 38: np.nan  # HaOgen (house holding)
+        , 41: np.nan  # Investment
+        , 47: np.nan  # IGNORE
+        , 38: np.nan  # house holding
         , 32: np.nan  # Car test
-        , 23: np.nan  # Car expenses
         , 31: np.nan  # Accountant US taxes
         , 30: np.nan  # Events & Concerts
         , 27: np.nan  # Weddings
@@ -69,10 +69,8 @@ CLASS_2_CLASS_MAP = {
         , 16: np.nan  # Mutual leisure
         , 11: np.nan  # Startup expenses
         , 10: np.nan  # Personal leisure
-        , 8: np.nan  # Clothing
         , 7: np.nan  # Goalball
         , 29: np.nan  # Goodies
-
     }
 }
 # endregion
@@ -118,6 +116,7 @@ BRANDS = [
     , 'כללית'
     , 'דלק'
     , 'חניה'
+    , 'חנייה'
     , 'חניון'
     , 'חומוס'
     , 'spotify'
