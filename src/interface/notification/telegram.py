@@ -16,14 +16,18 @@ from src.core.notification.categorization import HighLevelCategories
 
 
 def build_status_msg(data: pd.DataFrame) -> str:
-    res = f"Status - {data['datetime'].iloc[0]}\n\n"
+    res = f"""𝔻𝕒𝕚𝕝𝕪 𝕊𝕥𝕒𝕥𝕦𝕤 :: {data['datetime'].iloc[0]}\n![Random Image](https://www.ziprecruiter.com/svc/fotomat/public-ziprecruiter/cms/1135346314AccountingIntern.jpg=ws1280x960)
+\n\n"""
     res += build_progress_bar_msg(data['month_to_date_expense'].sum(), data['limit'].sum(), 'סה"כ')
     return res
 
 
 def build_progress_bar_msg(expense: float, limit: float, category: str) -> str:
     progress = expense / limit
-    progress_bar = '█' * int(progress * 20) + '░' * (20 - int(progress * 20))
+    if progress <= 1:
+        progress_bar = '▓' * int(progress * 20) + '░' * (20 - int(progress * 20))
+    else:
+        progress_bar = '▓' * 20 + '█' * (int(progress * 20)-20)
     return f"{category}" \
            f"\n\n{progress_bar}" \
            f"\n\n{expense:.1f} ₪ / {limit:.1f} ₪ ({progress * 100:.1f}%)"
@@ -69,8 +73,9 @@ async def send_monthly_progress_to_telegram(data: pd.DataFrame) -> bool:
     telegram_block = await JSON.load("telegram-credentials")
     bot = Bot(token=telegram_block.value.get('TELEGRAM_BOT_TOKEN'))
     status_msg = build_status_msg(data)
-    await bot.send_message(chat_id=telegram_block.value.get('TELEGRAM_CHANNEL_ID')
+    msg = await bot.send_message(chat_id=telegram_block.value.get('TELEGRAM_CHANNEL_ID')
                            , text=escape_markdown(status_msg, version=2)
+                            , disable_web_page_preview=False
                            , parse_mode=ParseMode.MARKDOWN_V2)
     for index, record in data.iterrows():
         progress_text = build_progress_bar_msg(expense=record['month_to_date_expense'], limit=record['limit'],
